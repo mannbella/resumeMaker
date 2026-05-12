@@ -2,7 +2,7 @@ import json
 import os
 from google import genai
 from docx import Document
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, RichText
 
 from config import COMPANY_NAME, JOB_TITLE, OUTPUT_FOLDER_RESUME, RESUME_SOURCE, CV_SOURCE, JOB_DESCRIPTION
 
@@ -57,6 +57,7 @@ CRITICAL FORMATTING INSTRUCTIONS FOR JSON OUTPUT:
    • [Bullet point 1]
    • [Bullet point 2]
 4. BULLET INDENTATION: For every bullet point in Experience and Projects, start the line with a tab space or four spaces followed by a bullet symbol (e.g., "    • "). This ensures the bullets don't sit flush against the left margin.
+5. For the experience and projects sections, start every bullet point with a tab character (\t) or four spaces, followed by a bullet symbol (•) and one space. For example: \t• Developed RESTful API...
 """
 
 response = client.models.generate_content(
@@ -69,17 +70,28 @@ ai_results = json.loads(response.text)
 
 template_doc = DocxTemplate('Resume-TEMPLATE.docx')
 
+rt_experience = RichText()
+experience_st = ai_results.get("experience", "")
+lines = experience_st.split('\n')
+
+for line in lines:
+    clean_line = line.strip()
+    if clean_line.startswith('•') or clean_line.startswith('-'):
+        rt_experience.add(clean_line + '\n', style='List Bullet')
+    else:
+        rt_experience.add(line + '\n')
+
 replacements = {
     "SUMMARY": ai_results.get("summary", ""),
-    "EXPERIENCE": ai_results.get("experience", ""),
+    "EXPERIENCE": rt_experience,
     "PROJECTS": ai_results.get("projects", ""),
     "SKILLS": ai_results.get("skills", "")
 }
 
 template_doc.render(replacements)
 
-filename = f"{companyName}_IsabellaMann_Resume.docx"
-save_path = os.path.join(output_folder, filename)
+filename = f"{COMPANY_NAME}_IsabellaMann_Resume.docx"
+save_path = os.path.join(OUTPUT_FOLDER_RESUME, filename)
 
 template_doc.save(save_path)
 print(f"Done! saved to: {save_path}")
