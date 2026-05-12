@@ -1,50 +1,30 @@
-import requests
 import json
-from bs4 import BeautifulSoup
+import os
 from google import genai
 from docx import Document
 from docxtpl import DocxTemplate
+
+from config import COMPANY_NAME, JOB_TITLE, OUTPUT_FOLDER_RESUME, RESUME_SOURCE, CV_SOURCE, JOB_DESCRIPTION
+
 
 client = genai.Client()
 
 # job_url = "https://www.isnetworld.com/en/careers/5977058004?gh_src=e5150d284us#application"
 # page = requests.get(job_url)
 # soup = BeautifulSoup(page.content, "html.parser")
-job_posting_text = """
-The Position: The Associate Software Developer - DevSupport position is responsible for supporting the ISNetworld application. As a member of ISN’s Product team, you will be exposed to managing tickets, using SQL to identify root causes of issues and troubleshoot as needed.
 
-Who should apply?
-
-Bachelor’s degree from an accredited university
-Hands on experience in writing complex SQL queries to extract, validate and analyze data for root cause identification
-Knowledge of T-SQL; writing queries, stored procedures, and functions
-Working knowledge of web development (ASP.NET web forms, MVC, C# or VB.NET a plus)
-Excellent verbal and written communication skills
-A passion for customer service
-Ability to work well in a fast-paced environment
-Solid analytical and problem-solving ability
-Primary Duties & Responsibilities:
-
-Handle service requests from internal and external users in an efficient and timely manner
-Create queries on large data sets
-Reverse engineer existing SQL code, data flow and logic
-Import and export data on Production databases
-Troubleshoot the application to identify root causes of system behavior
-Analyze query performance and identify improvement areas
-Be able to work with development, QA, business teams and at times directly with customers
-Strive to provide the best service to all customers in every situation
-"""
-
-source_doc = Document('IsabellaMann_Resume.docx')
+source_doc = Document(RESUME_SOURCE)
 full_resume_text = "\n".join([p.text for p in source_doc.paragraphs])
 
-reader_cv = Document('IsabellaMann_CV.docx')
+reader_cv = Document(CV_SOURCE)
 cv_text = "\n".join([p.text for p in reader_cv.paragraphs])
 
 background_info = f"RESUME DATA:\n{full_resume_text}\n\nCV DATA:\n{cv_text}"
 
 prompt=f"""
-I am applying for this job: {job_posting_text}
+I am applying for a role at {COMPANY_NAME}
+Job requirements: {JOB_DESCRIPTION}
+Job title: {JOB_TITLE}
 Here is my full professional background: {background_info}
 
 Rewrite my 'Professional Summary', 'Experience', 'Projects', and 'Skills' sections
@@ -55,8 +35,11 @@ SKILLS INTEGRATION & FORMATTING:
 2. SKILLS SECTION: Keep the exact format from the original resume: 
    Languages: [List]
    Frameworks & Libraries: [List]
-   Tools & Environments: [List]
-3. CAP SKILLS: Limit each category in the Skills section to the top 6-8 most relevant items.
+   Tools and Environments: [List]
+3. CAP SKILLS: Limit each category in the Skills section to the top 6-9 most relevant items.
+4. CAP EXPERIENCES: Limit the number of experiences in the Experience section to the top 4 most relevant items.
+5. ONE-PAGE GOAL: Use concise, professional language. Avoid filler words like "responsible for" or "duties included."
+6. PROJECT LIMIT: Limit each project to 2-3 concise bullet points.
 
 CRITICAL ATS (Applicant Tracking System) & BACKGROUND INSTRUCTIONS:
 1. TRUTH-ONLY RULE: Use your analysis of my provided resume to determine my actual skills. 
@@ -94,5 +77,9 @@ replacements = {
 }
 
 template_doc.render(replacements)
-template_doc.save("IsabellaMann_Updated_resume.docx")
-print("Done!")
+
+filename = f"{companyName}_IsabellaMann_Resume.docx"
+save_path = os.path.join(output_folder, filename)
+
+template_doc.save(save_path)
+print(f"Done! saved to: {save_path}")
